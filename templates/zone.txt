@@ -1,0 +1,15 @@
+$TTL  30M
+
+$ORIGIN {{ metadata.origin }}
+@                    IN  SOA   ns.{{ metadata.origin }} {{ metadata.origin}} (
+                                               2019121301 ; serial
+                                               1d ; refresh
+                                               2h ; retry
+                                               4w ; expire
+                                               1h ; nxdomain ttl
+                                              )
+                     IN  NS  ns.{{ metadata.origin }}.
+
+{% for location in metadata.locations %}
+{{ location.hostname }} IN A {{ location.ip4_address }}
+{% endfor %}
