@@ -22,7 +22,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
- release:
+  release:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next'
     runs-on: ubuntu-latest
     environment: default
