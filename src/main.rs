@@ -110,7 +110,7 @@ async fn update_zones(
         let template = ZoneTemplate {
             metadata: &Arc::new(ZoneMetadata {
                 locations: locations.clone(),
-                origin: origin.clone(),
+                origin: format!("{}.", origin),
             }),
         };
         let rendered = template.render()?;
