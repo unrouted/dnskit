@@ -1,40 +1,19 @@
 use anyhow::Result;
 use askama::Template;
-use futures::task::Spawn;
 use futures::TryStreamExt;
-use k8s_openapi::api::apps::v1::RollingUpdateDeployment;
-use k8s_openapi::api::core::v1::{
-    ConfigMap, ConfigMapVolumeSource, SecretVolumeSource, Service, ServicePort, ServiceSpec,
-};
-use k8s_openapi::api::networking::v1::Ingress;
-use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
-use k8s_openapi::{
-    api::{
-        apps::v1::{Deployment, DeploymentSpec, DeploymentStrategy},
-        core::v1::{Container, PodSpec, PodTemplateSpec, Volume, VolumeMount},
-    },
-    apimachinery::pkg::apis::meta::v1::{LabelSelector, OwnerReference},
-};
+use k8s_openapi::api::core::v1::{ConfigMap, Service};
 use kube::runtime::reflector::store;
-use kube::runtime::reflector::ObjectRef;
-use kube::runtime::reflector::{reflector, Store};
+use kube::runtime::reflector::Store;
 use kube::runtime::WatchStreamExt;
-use kube::CustomResourceExt;
 use kube::{
     api::{Api, ObjectMeta, Patch, PatchParams},
-    runtime::{
-        controller::{Action, Config, Controller},
-        watcher,
-    },
+    runtime::watcher,
     Client, Resource,
 };
 
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::Write;
 use std::net::IpAddr;
 use std::{collections::BTreeMap, sync::Arc};
-use tokio::time::Duration;
 use tracing::*;
 
 mod error;
@@ -86,25 +65,21 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
                                             match ip.parse() {
                                                 Ok(addr) => {
                                                     let location = match addr {
-                                                        IpAddr::V4(_) => {
-                                                            Location {
-                                                                hostname: hostname.to_string(),
-                                                                ip4_address: Some(ip.to_string()),
-                                                                ip6_address: None,
-                                                            }
-                                                        }
-                                                        IpAddr::V6(_) => {
-                                                            Location {
-                                                                hostname: hostname.to_string(),
-                                                                ip4_address: None,
-                                                                ip6_address: Some(ip.to_string()),
-                                                            }
-                                                        }
+                                                        IpAddr::V4(_) => Location {
+                                                            hostname: hostname.to_string(),
+                                                            ip4_address: Some(ip.to_string()),
+                                                            ip6_address: None,
+                                                        },
+                                                        IpAddr::V6(_) => Location {
+                                                            hostname: hostname.to_string(),
+                                                            ip4_address: None,
+                                                            ip6_address: Some(ip.to_string()),
+                                                        },
                                                     };
-                                                    let zone =
-                                                    zones.entry(origin.to_string()).or_insert(vec![]);
+                                                    let zone = zones
+                                                        .entry(origin.to_string())
+                                                        .or_insert(vec![]);
                                                     zone.push(location);
-
                                                 }
                                                 Err(_) => {
                                                     info!("{hostname}: invalid address: {ip}");
@@ -146,7 +121,12 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
     };
 
     let api = Api::<ConfigMap>::namespaced(client.clone(), "default");
-    api.patch("zones", &PatchParams::apply("dnskit").force(), &Patch::Apply(zones)).await?;
+    api.patch(
+        "zones",
+        &PatchParams::apply("dnskit").force(),
+        &Patch::Apply(zones),
+    )
+    .await?;
 
     Ok(())
 }
