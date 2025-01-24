@@ -36,7 +36,11 @@ struct ZoneTemplate<'a> {
     metadata: &'a Arc<ZoneMetadata>,
 }
 
-async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result<()> {
+async fn update_zones(
+    client: Client,
+    reader: &Store<Service>,
+    namespace: &str,
+) -> anyhow::Result<()> {
     reader.wait_until_ready().await.unwrap();
 
     let mut zones = HashMap::new();
@@ -112,17 +116,17 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
 
     let zones = ConfigMap {
         metadata: ObjectMeta {
-            name: Some("zones".to_string()),
-            namespace: Some("default".to_string()),
+            name: Some("coredns-zones".to_string()),
+            namespace: Some(namespace.to_string()),
             ..Default::default()
         },
         data: Some(data),
         ..Default::default()
     };
 
-    let api = Api::<ConfigMap>::namespaced(client.clone(), "default");
+    let api = Api::<ConfigMap>::namespaced(client.clone(), namespace);
     api.patch(
-        "zones",
+        "coredns-zones",
         &PatchParams::apply("dnskit").force(),
         &Patch::Apply(zones),
     )
@@ -135,6 +139,8 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
+    let namespace = std::env::var("DNSKIT_NAMESPACE")?;
+
     let client = Client::try_default().await?;
 
     let api = Api::<Service>::all(client.clone());
@@ -142,7 +148,7 @@ async fn main() -> Result<()> {
 
     tokio::spawn(async move {
         loop {
-            match update_zones(client.clone(), &reader).await {
+            match update_zones(client.clone(), &reader, &namespace).await {
                 Ok(_) => {}
                 Err(e) => {
                     info!("Error whilst updating zone data: {}", e);
