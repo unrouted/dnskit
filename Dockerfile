@@ -21,3 +21,4 @@ FROM scratch
 COPY --from=build /usr/src/operator/target/x86_64-unknown-linux-musl/release/dnskit .
 USER 1000
 ENTRYPOINT ["./dnskit"]
+
