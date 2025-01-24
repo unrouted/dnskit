@@ -116,13 +116,14 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
     let zones = ConfigMap {
         metadata: ObjectMeta {
             name: Some("zones".to_string()),
+            namespace: Some("default".to_string()),
             ..Default::default()
         },
         data: Some(data),
         ..Default::default()
     };
 
-    let api = Api::<ConfigMap>::all(client.clone());
+    let api = Api::<ConfigMap>::namespaced(client.clone(), "default");
     api.patch("zones", &PatchParams::apply("dnskit").force(), &Patch::Apply(zones)).await?;
 
     Ok(())
