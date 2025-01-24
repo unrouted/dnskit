@@ -153,6 +153,8 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
+
     let client = Client::try_default().await?;
 
     let api = Api::<Service>::all(client.clone());
