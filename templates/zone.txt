@@ -8,7 +8,7 @@ $ORIGIN {{ metadata.origin }}
                                                4w ; expire
                                                1h ; nxdomain ttl
                                               )
-                     IN  NS  ns.{{ metadata.origin }}.
+                     IN  NS  ns.{{ metadata.origin }}
 
 {% for location in metadata.locations %}
 {% if let Some(ip4_address) = location.ip4_address %}
