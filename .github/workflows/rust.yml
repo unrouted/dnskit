@@ -41,7 +41,7 @@ jobs:
           @semantic-release/github
           @semantic-release/commit-analyzer
           @semantic-release/release-notes-generator
-          @conventional-changelog-conventionalcommits
+          conventional-changelog-conventionalcommits
           @semantic-release/exec
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
