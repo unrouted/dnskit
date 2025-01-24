@@ -32,6 +32,7 @@ use kube::{
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Write;
+use std::net::IpAddr;
 use std::{collections::BTreeMap, sync::Arc};
 use tokio::time::Duration;
 use tracing::*;
@@ -41,7 +42,8 @@ mod error;
 #[derive(Clone)]
 struct Location {
     hostname: String,
-    ip4_address: String,
+    ip4_address: Option<String>,
+    ip6_address: Option<String>,
 }
 
 struct ZoneMetadata {
@@ -81,13 +83,33 @@ async fn update_zones(client: Client, reader: &Store<Service>) -> anyhow::Result
                                     let (hostname, origin) = hostname.split_once(".").unwrap();
                                     for address in ingress {
                                         if let Some(ip) = address.ip.as_ref() {
-                                            let location = Location {
-                                                hostname: hostname.to_string(),
-                                                ip4_address: ip.to_string(),
-                                            };
-                                            let zone =
-                                                zones.entry(origin.to_string()).or_insert(vec![]);
-                                            zone.push(location);
+                                            match ip.parse() {
+                                                Ok(addr) => {
+                                                    let location = match addr {
+                                                        IpAddr::V4(_) => {
+                                                            Location {
+                                                                hostname: hostname.to_string(),
+                                                                ip4_address: Some(ip.to_string()),
+                                                                ip6_address: None,
+                                                            }
+                                                        }
+                                                        IpAddr::V6(_) => {
+                                                            Location {
+                                                                hostname: hostname.to_string(),
+                                                                ip4_address: None,
+                                                                ip6_address: Some(ip.to_string()),
+                                                            }
+                                                        }
+                                                    };
+                                                    let zone =
+                                                    zones.entry(origin.to_string()).or_insert(vec![]);
+                                                    zone.push(location);
+
+                                                }
+                                                Err(_) => {
+                                                    info!("{hostname}: invalid address: {ip}");
+                                                }
+                                            }
                                         }
                                     }
                                 }
