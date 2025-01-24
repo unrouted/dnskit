@@ -11,10 +11,10 @@ $ORIGIN {{ metadata.origin }}
                      IN  NS  ns.{{ metadata.origin }}
 
 {% for location in metadata.locations %}
-{% if let Some(ip4_address) = location.ip4_address %}
+{% if let Some(ip4_address) = location.ip4_address -%}
 {{ location.hostname }} IN A {{ ip4_address }}
-{% endif %}
-{% if let Some(ip6_address) = location.ip6_address %}
+{%- endif %}
+{% if let Some(ip6_address) = location.ip6_address -%}
 {{ location.hostname }} IN AAAA {{ ip6_address }}
-{% endif %}
+{%- endif %}
 {% endfor %}
