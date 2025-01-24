@@ -80,9 +80,12 @@ async fn update_zones(
                                                             ip6_address: Some(ip.to_string()),
                                                         },
                                                     };
-                                                    let zone = zones
-                                                        .entry(origin.to_string())
-                                                        .or_insert(vec![]);
+                                                    let zone_key = origin
+                                                        .strip_suffix(".")
+                                                        .unwrap()
+                                                        .to_string();
+                                                    let zone =
+                                                        zones.entry(zone_key).or_insert(vec![]);
                                                     zone.push(location);
                                                 }
                                                 Err(_) => {
